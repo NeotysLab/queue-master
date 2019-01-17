@@ -20,9 +20,31 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
+        <neoload-maven-plugin.version>1.0.5</neoload-maven-plugin.version>
+        <dynatraceId>vwv51099</dynatraceId>
+        <neoLoadWebAPIKey>15304f743f34ca33c458927a40945b7424a2066b95563774</neoLoadWebAPIKey>
+        <dynatraceApiKey>aZMHwCI3QKe7YhK7MmEGC</dynatraceApiKey>
+        <tags>shippping</tags>
+        <outPutReferenceFile>/home/hrexed/dynatrace_smarscape.json</outPutReferenceFile>
+        <dataExchangeApiUrl>http://localhost:7400/DataExchange/v1/Service.svc/</dataExchangeApiUrl>
+        <jsonAnomalieDetectionFile></jsonAnomalieDetectionFile>
+        <customActionPath>lib/DynatraceIntegration-2.0.11-SNAPSHOT.jar</customActionPath>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.neotys.ascode</groupId>
+            <artifactId>neoload-maven-plugin</artifactId>
+            <version>${neoload-maven-plugin.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.neotys.ascode</groupId>
+            <artifactId>neoLoad-framework</artifactId>
+            <version>${neoload-maven-plugin.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-rest</artifactId>
@@ -81,6 +103,31 @@
                 <configuration>
                     <includes>
                         <include>**/Unit*.java</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/IT*.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.19.1</version>
+                <configuration>
+
+                    <systemPropertyVariables>
+                        <dataExchangeApiUrl>${dataExchangeApiUrl}</dataExchangeApiUrl>
+                        <customActionPath>${customActionPath}</customActionPath>
+                        <dynatraceApiKey>${dynatraceApiKey}</dynatraceApiKey>
+                        <dynatraceId>${dynatraceId}</dynatraceId>
+                        <tags>${tags}</tags>
+                        <jsonAnomalieDetectionFile>${jsonAnomalieDetectionFile}</jsonAnomalieDetectionFile>
+                        <outPutReferenceFile>${outPutReferenceFile}</outPutReferenceFile>
+                    </systemPropertyVariables>
+
+                    <includes>
+                        <include>**/Unit*.java</include>
+                        <include>**/*Test*.java</include>
                     </includes>
                     <excludes>
                         <exclude>**/IT*.java</exclude>
