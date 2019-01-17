@@ -1,1 +1,1 @@
-nl-lg-shipping.cicd.svc
+nl-lg-queuemaster.cicd.svc
