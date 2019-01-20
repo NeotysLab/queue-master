@@ -141,7 +141,7 @@ pipeline {
               steps {
                 container('neoload') {
                   script {
-                         status =sh(script:"/neoload/bin/NeoLoadCmd -project $WORKSPACE/target/neoload/queuemaster_NeoLoad/queuemaster_NeoLoad.nlp -testResultName DynatraceSanityCheck_carts_${BUILD_NUMBER} -description DynatraceSanityCheck_carts_${BUILD_NUMBER} -nlweb -L  Population_Dynatrace_SanityCheck=$WORKSPACE/infrastructure/infrastructure/neoload/lg/local.txt -nlwebToken $NLAPIKEY -variables host=${env.APP_NAME}.dev,port=80 -launch DYNATRACE_SANITYCHECK  -noGUI", returnStatus: true)
+                         status =sh(script:"/neoload/bin/NeoLoadCmd -project $WORKSPACE/target/neoload/queuemaster_NeoLoad/queuemaster_NeoLoad.nlp -testResultName DynatraceSanityCheck_carts_${BUILD_NUMBER} -description DynatraceSanityCheck_carts_${BUILD_NUMBER} -nlweb -L  Population_Dynatrace_SanityCheck=$WORKSPACE/infrastructure/infrastructure/neoload/lg/local.txt -nlwebToken $NLAPIKEY -variables host=${env.APP_NAME}.dev.svc,port=80 -launch DYNATRACE_SANITYCHECK  -noGUI", returnStatus: true)
 
                          if (status != 0) {
                               currentBuild.result = 'FAILED'
@@ -155,10 +155,10 @@ pipeline {
                    withCredentials([usernamePassword(credentialsId: 'git-credentials-acm', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                        sh "git config --global user.email ${env.GITHUB_USER_EMAIL}"
                        sh "git stash"
-                       sh "git pull https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${env.GITHUB_ORGANIZATION}/queue-master origin master -r"
+                      // sh "git pull https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${env.GITHUB_ORGANIZATION}/queue-master origin master -r"
                        sh "git add ${OUTPUTSANITYCHECK}"
                        sh "git commit -m 'Update Sanity_Check_${BUILD_NUMBER} ${env.APP_NAME} version ${env.VERSION}'"
-                       sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${env.GITHUB_ORGANIZATION}/queue-master ${GITORIGIN} master"
+                     //  sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/${env.GITHUB_ORGANIZATION}/queue-master ${GITORIGIN} master"
                    }
                  }
 
@@ -171,10 +171,10 @@ pipeline {
         }
       }
       steps {
-        container('jmeter') {
+        container('neoload') {
          script {
 
-                status =sh(script:"/neoload/bin/NeoLoadCmd -project $WORKSPACE/target/neoload/queuemaster_NeoLoad/queuemaster_NeoLoad.nlp -testResultName HealthCheck_queuemaster_${BUILD_NUMBER} -description HealthCheck_queuemaster_${BUILD_NUMBER} -nlweb -L Population_BasicCheckTesting=$WORKSPACE/infrastructure/infrastructure/neoload/lg/remote.txt -L Population_Dynatrace_Integration=$WORKSPACE/infrastructure/infrastructure/neoload/lg/local.txt -nlwebToken $NLAPIKEY -variables host=${env.APP_NAME}.dev.svc,port=80,basicPath=${BASICCHECKURI} -launch QueueMaster_Load -noGUI", returnStatus: true)
+                status =sh(script:"/neoload/bin/NeoLoadCmd -project $WORKSPACE/target/neoload/queuemaster_NeoLoad/queuemaster_NeoLoad.nlp -testResultName FuncTest_queuemaster_${BUILD_NUMBER} -description FuncCheck_queuemaster_${BUILD_NUMBER} -nlweb -L Population_BasicCheckTesting=$WORKSPACE/infrastructure/infrastructure/neoload/lg/remote.txt -L Population_Dynatrace_Integration=$WORKSPACE/infrastructure/infrastructure/neoload/lg/local.txt -nlwebToken $NLAPIKEY -variables host=${env.APP_NAME}.dev.svc,port=80,basicPath=${BASICCHECKURI} -launch QueueMaster_Load -noGUI", returnStatus: true)
                 if (status != 0) {
                     currentBuild.result = 'FAILED'
                     error "Load Test on cart."

@@ -6,8 +6,38 @@ pipeline {
   }
   environment {
     APP_NAME = "queue-master"
+    NL_DT_TAG="app:${env.APP_NAME},environment:dev"
+    QUEUEMASTER_ANOMALIEFILE="$WORKSPACE/monspec/queue-master_anomalieDection.json"
+    DYNATRACEID="${env.DT_ACCOUNTID}"
+    DYNATRACEAPIKEY="${env.DT_API_TOKEN}"
+    NLAPIKEY="${env.NL_WEB_API_KEY}"
+    OUTPUTSANITYCHECK="$WORKSPACE/infrastructure/sanitycheck.json"
+    DYNATRACEPLUGINPATH="$WORKSPACE/lib/DynatraceIntegration-3.0.1-SNAPSHOT.jar"
+    BASICCHECKURI="/health"
   }
   stages {
+    stages('Build NeoLoad Project'){
+        steps{
+            checkout scm
+
+            container('maven') {
+                    sh "mvn -B clean package -DdynatraceId=$DYNATRACEID -DneoLoadWebAPIKey=$NLAPIKEY -DdynatraceApiKey=$DYNATRACEAPIKEY -Dtags=${NL_DT_TAG} -DoutPutReferenceFile=$OUTPUTSANITYCHECK -DcustomActionPath=$DYNATRACEPLUGINPATH -DjsonAnomalieDetectionFile=$QUEUEMASTER_ANOMALIEFILE"
+                    sh "chmod -R 777 $WORKSPACE/target/neoload/"
+
+             }
+        }
+    }
+     stage('Start NeoLoad infrastructure') {
+
+            steps {
+                    container('kubectl') {
+                        script {
+                         sh "kubectl create -f $WORKSPACE/infrastructure/infrastructure/neoload/lg/docker-compose.yml"
+                        }
+                    }
+            }
+
+        }
     stage('Performance Check') {
       steps {
         checkout scm
@@ -28,20 +58,14 @@ pipeline {
           ]
         ) 
         {
-          container('jmeter') {
+          container('neoload') {
+
             script {
-              def status = executeJMeter ( 
-                scriptName: "jmeter/${env.APP_NAME}_load.jmx",
-                resultsDir: "PerfCheck_${env.APP_NAME}",
-                serverUrl: "${env.APP_NAME}.dev", 
-                serverPort: 80,
-                checkPath: '/health',
-                vuCount: 10,
-                loopCount: 250,
-                LTN: "PerfCheck_${BUILD_NUMBER}",
-                funcValidation: false,
-                avgRtValidation: 250
-              )
+              sh "mkdir -p /home/jenkins/.neotys/neoload"
+              sh "cp $WORKSPACE/infrastructure/infrastructure/neoload/license.lic /home/jenkins/.neotys/neoload/"
+              status =sh(script:"/neoload/bin/NeoLoadCmd -project $WORKSPACE/target/neoload/queuemaster_NeoLoad/queuemaster_NeoLoad.nlp -testResultName PerfCheck_queuemaster_${BUILD_NUMBER} -description PerfCheck_queuemaster_${BUILD_NUMBER} -nlweb -L Population_BasicCheckTesting=$WORKSPACE/infrastructure/infrastructure/neoload/lg/remote.txt -L Population_Dynatrace_Integration=$WORKSPACE/infrastructure/infrastructure/neoload/lg/local.txt -nlwebToken $NLAPIKEY -variables host=${env.APP_NAME}.dev.svc,port=80,basicPath=${BASICCHECKURI} -launch QueueMaster_Load -noGUI", returnStatus: true)
+
+
               if (status != 0) {
                 currentBuild.result = 'FAILED'
                 error "Performance check failed."
@@ -58,4 +82,16 @@ pipeline {
       }
     }
   }
+   post {
+            always {
+              container('kubectl') {
+                     script {
+                      echo "delete neoload infrastructure"
+                      sh "kubectl delete svc nl-lg-queuemaster -n cicd"
+                      sh "kubectl delete pod nl-lg-queuemaster -n cicd --grace-period=0 --force"
+                     }
+              }
+            }
+
+          }
 }
