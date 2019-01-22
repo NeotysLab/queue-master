@@ -1,1 +1,1 @@
-nl-lg-queuemaster.cicd.svc
+nl-lg-queuemaster.cicd-neotys.svc
