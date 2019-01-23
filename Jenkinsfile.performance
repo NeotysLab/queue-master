@@ -16,7 +16,7 @@ pipeline {
     BASICCHECKURI="/health"
   }
   stages {
-    stages('Build NeoLoad Project'){
+    stage('Build NeoLoad Project'){
         steps{
             checkout scm
 
