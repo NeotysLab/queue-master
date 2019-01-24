@@ -14,7 +14,7 @@ pipeline {
     ARTEFACT_ID = "sockshop-" + "${env.APP_NAME}"
     NL_DT_TAG="app:${env.APP_NAME},environment:dev"
     QUEUEMASTER_ANOMALIEFILE="$WORKSPACE/monspec/queue-master_anomalieDection.json"
-    DYNATRACEID="${env.DT_ACCOUNTID}"
+    DYNATRACEID="${env.DT_ACCOUNTID}.live.dynatrace.com"
     DYNATRACEAPIKEY="${env.DT_API_TOKEN}"
     NLAPIKEY="${env.NL_WEB_API_KEY}"
     OUTPUTSANITYCHECK="$WORKSPACE/infrastructure/sanitycheck.json"
